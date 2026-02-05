@@ -27,6 +27,7 @@ export interface OAuthConfigModel {
   clientIdEncrypted: string;
   clientSecretEncrypted: string;
   refreshTokenEncrypted: string | null;
+  authTokenEncrypted: string | null;
   encryptionVersion: number;
   allowedScopes: string[];
   sdpInstanceUrl: string;
@@ -135,6 +136,7 @@ export interface CreateOAuthConfigInput {
   clientIdEncrypted: string;
   clientSecretEncrypted: string;
   refreshTokenEncrypted?: string;
+  authTokenEncrypted?: string;
   allowedScopes: string[];
   sdpInstanceUrl: string;
 }

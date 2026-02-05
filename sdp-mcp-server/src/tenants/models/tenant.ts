@@ -65,6 +65,7 @@ export interface DecryptedOAuthConfig {
   clientId: string;
   clientSecret: string;
   refreshToken?: string;
+  authToken?: string;
 }
 
 /**
@@ -81,6 +82,7 @@ export interface TenantWithConfig {
     clientId: string;
     clientSecret: string;
     refreshToken?: string;
+    authToken?: string;
     allowedScopes: string[];
     sdpInstanceUrl: string;
   };
@@ -97,6 +99,7 @@ export interface TenantRegistrationRequest {
   clientId: string;
   clientSecret: string;
   refreshToken?: string;
+  authToken?: string;
   allowedScopes: string[];
   sdpInstanceUrl: string;
   rateLimitTier?: RateLimitTier;
@@ -115,7 +118,7 @@ export function getSDPBaseUrl(dataCenter: DataCenter): string {
     CN: 'https://sdpondemand.manageengine.cn',
     JP: 'https://sdpondemand.manageengine.jp',
   };
-  
+
   return dataCenterUrls[dataCenter];
 }
 

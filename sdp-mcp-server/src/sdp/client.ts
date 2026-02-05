@@ -84,7 +84,7 @@ export class SDPClient {
     this.axios.interceptors.request.use(
       async (config) => {
         const startTime = Date.now();
-        
+
         // Get current tenant
         const tenantId = getCurrentTenantId();
         if (!tenantId) {
@@ -120,8 +120,8 @@ export class SDPClient {
         }
 
         // Get OAuth token
-        const token = await this.tokenManager.getAccessToken(tenantId);
-        config.headers.Authorization = `Bearer ${token}`;
+        const { token, prefix } = await this.tokenManager.getAccessToken(tenantId);
+        config.headers.Authorization = `${prefix} ${token}`;
 
         // Add request metadata
         config.metadata = {
@@ -284,7 +284,7 @@ export class SDPClient {
   private async request<T>(config: AxiosRequestConfig): Promise<T> {
     const endpoint = this.getEndpointKey(config);
     const tenantId = getCurrentTenantId();
-    
+
     if (!tenantId || !this.tenant) {
       throw new SDPError('No tenant context', 'NO_TENANT_CONTEXT', 400);
     }
@@ -320,7 +320,7 @@ export class SDPClient {
         // Execute with retry logic
         return retryPolicy.execute(async () => {
           const result = await this.axios.request<SDPResponse<T>>(config);
-          
+
           // Extract data from SDP response format
           const data = this.extractData<T>(result.data);
 
@@ -408,11 +408,11 @@ export class SDPClient {
   private getEndpointKey(config: AxiosRequestConfig): string {
     const url = config.url || '';
     const method = config.method || 'GET';
-    
+
     // Extract the main resource from URL
     const match = url.match(/\/api\/v3\/(\w+)/);
     const resource = match ? match[1] : 'unknown';
-    
+
     return `${method}:${resource}`;
   }
 
@@ -445,11 +445,11 @@ export class SDPClient {
    */
   getCircuitBreakerStatus(): Map<string, string> {
     const status = new Map<string, string>();
-    
+
     for (const [endpoint, breaker] of this.circuitBreakers) {
       status.set(endpoint, breaker.getState());
     }
-    
+
     return status;
   }
 
@@ -487,9 +487,9 @@ export function createSDPClientFactory(
       // Use tenant's custom instance URL if available, otherwise use data center URL
       const baseURL = tenant.oauthConfig.sdpInstanceUrl || this.getDataCenterURL(tenant.dataCenter);
       const clientKey = `${tenantId}:${baseURL}`;
-      
+
       let client = clients.get(clientKey);
-      
+
       if (!client) {
         client = new SDPClient(
           {
@@ -503,7 +503,7 @@ export function createSDPClientFactory(
         );
         clients.set(clientKey, client);
       }
-      
+
       return client;
     },
 
