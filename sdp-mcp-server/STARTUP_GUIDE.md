@@ -1,10 +1,9 @@
-# SDP MCP Server Startup Guide
+# SDP MCP Server Startup Guide (Docker)
 
-This guide describes how to start the MCP server with an on-premise ManageEngine ServiceDesk Plus (SDP) instance using an AuthToken.
+This guide describes how to start the MCP server with an on-premise ManageEngine ServiceDesk Plus (SDP) instance using an AuthToken, using only Docker.
 
 ## 1. Prerequisites
 
-- Node.js (v18+)
 - Docker & Docker Compose
 - ManageEngine SDP On-Premise Instance (accessible from this machine)
 - Generated AuthToken from SDP (API Key)
@@ -15,30 +14,34 @@ This guide describes how to start the MCP server with an on-premise ManageEngine
     ```bash
     cp .env.example .env
     ```
-2.  Update the following fields in `.env`. You can leave most others as default for local testing.
+2.  Update the following fields in `.env`.
 
     ```ini
-    # Database (Ensure these match your docker-compose or local DB)
-    DB_HOST=localhost
-    DB_PORT=5433
+    # Database (Keep these defaults for Docker networking)
+    DB_HOST=postgres
+    DB_PORT=5432
     DB_USER=sdpmcpservice
     DB_PASSWORD=*jDE1Bj%IPXKMe%Z
     DB_NAME=sdp_mcp
     
+    # Redis
+    REDIS_HOST=redis
+    REDIS_PORT=6379
+
     # Security (Generate a secure 32-char string)
     ENCRYPTION_KEY=your-32-character-encryption-key-here
     
-    # Default SDP Config (Will be overridden by tenant config, but good to set defaults)
+    # Default SDP Config
     SDP_BASE_URL=http://your-sdp-server:8080
     SDP_API_VERSION=v3
     ```
 
-## 3. Start Infrastructure
+## 3. Start Application
 
-Start the PostgreSQL and Redis containers using Docker Compose.
+Build and start the services (Server, Postgres, Redis).
 
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 Verify services are running:
@@ -48,40 +51,33 @@ docker-compose ps
 
 ## 4. Run Migrations
 
-Initialize the database schema.
+Initialize the database schema by running the migration script inside the server container.
 
 ```bash
-npm run db:migrate
+docker-compose run --rm server npm run db:migrate
 ```
 
 ## 5. Register Tenant (AuthToken Setup)
 
-Use the helper script to register your SDP instance and AuthToken.
+Use the helper script to register your SDP instance and AuthToken. We run this inside the container to ensure it has access to the database.
 
 ```bash
-node scripts/setup-tenant-authtoken.js
+docker-compose run --rm server node scripts/setup-tenant-authtoken.js
 ```
 
 Follow the prompts:
 -   **Tenant Name**: E.g., `ProdHelpDesk`
--   **SDP Base URL**: E.g., `http://192.168.1.100:8080` (Ensure this URL is reachable)
+-   **SDP Base URL**: E.g., `http://192.168.1.100:8080` (Ensure this URL is reachable from within the container)
 -   **AuthToken**: Paste your generated key.
 
-## 6. Start the Server
+> **Note**: If your SDP server is on the host machine (outside Docker), you may need to use `host.docker.internal` (Windows/Mac) or the host's IP address instead of `localhost`.
 
-Start the MCP server.
+## 6. Verify
+
+Tail the logs to ensure the server is running correctly:
 
 ```bash
-npm start
-```
-*Or for development logging:*
-```bash
-npm run dev
+docker-compose logs -f server
 ```
 
-The server will start (default port 3000) and attempts to listen for MCP connections.
-
-## 7. Troubleshooting
-
--   **Database Connection Refused?** Check if Docker containers are running and port `5433` is not blocked.
--   **Authentication Failed?** Ensure the AuthToken is valid and the Base URL is correct. Re-run step 5 to update the configuration if needed.
+The server listens on port 3000 by default.

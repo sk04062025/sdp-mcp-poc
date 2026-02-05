@@ -59,6 +59,35 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  server:
+    build: .
+    container_name: sdp-mcp-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # Pass through other env vars
+      - NODE_ENV=production
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sdp-mcp-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
