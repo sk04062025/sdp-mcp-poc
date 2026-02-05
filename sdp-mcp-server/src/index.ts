@@ -19,19 +19,19 @@ async function main(): Promise<void> {
     // Validate environment configuration
     logger.info('Validating environment configuration...');
     const config = validateEnvironment();
-    
+
     // Connect to PostgreSQL
     logger.info('Connecting to PostgreSQL...');
     await connectDatabase(config.database);
-    
+
     // Run database migrations
     logger.info('Running database migrations...');
     await runMigrations();
-    
+
     // Connect to Redis
     logger.info('Connecting to Redis...');
     await connectRedis(config.redis);
-    
+
     // Create and start the MCP server
     logger.info('Starting MCP server...');
     const server = createSDPMCPServer({
@@ -40,16 +40,17 @@ async function main(): Promise<void> {
       cors: config.server.cors,
       maxConnections: config.server.maxConnections || 100,
       heartbeatInterval: config.server.heartbeatInterval || 30000,
+      encryptionKey: config.security.encryptionKey,
     });
-    
+
     // Start server with specified transport
     const transport = config.server.transport as 'stdio' | 'sse' || 'sse';
     await server.start(transport);
-    
+
     // Setup graceful shutdown
     const shutdown = async (signal: string): Promise<void> => {
       logger.info(`Received ${signal}, initiating graceful shutdown...`);
-      
+
       try {
         await server.stop();
         logger.info('Server stopped successfully');
@@ -59,25 +60,25 @@ async function main(): Promise<void> {
         process.exit(1);
       }
     };
-    
+
     // Register shutdown handlers
     process.on('SIGTERM', () => void shutdown('SIGTERM'));
     process.on('SIGINT', () => void shutdown('SIGINT'));
-    
+
     // Handle uncaught errors
     process.on('uncaughtException', (error) => {
       logger.error('Uncaught exception:', error);
       void shutdown('uncaughtException');
     });
-    
+
     process.on('unhandledRejection', (reason, promise) => {
       logger.error('Unhandled rejection at:', promise, 'reason:', reason);
       void shutdown('unhandledRejection');
     });
-    
+
     logger.info('SDP MCP Server started successfully');
     logger.info(`Server endpoints: ${config.server.endpoints.join(', ')}`);
-    
+
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);

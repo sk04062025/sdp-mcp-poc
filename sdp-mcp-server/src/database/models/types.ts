@@ -5,8 +5,8 @@
 export type DataCenter = 'US' | 'EU' | 'IN' | 'AU' | 'CN' | 'JP';
 export type TenantStatus = 'active' | 'suspended' | 'inactive';
 export type RateLimitTier = 'basic' | 'standard' | 'premium' | 'enterprise';
-export type EventCategory = 'auth' | 'api' | 'admin' | 'security' | 'system';
-export type ActorType = 'system' | 'tenant' | 'admin' | 'mcp_client';
+export type EventCategory = 'auth' | 'api' | 'admin' | 'security' | 'system' | 'mcp';
+export type ActorType = 'system' | 'tenant' | 'admin' | 'mcp_client' | 'client';
 export type EventResult = 'success' | 'failure' | 'error';
 export type TransportType = 'sse' | 'websocket' | 'stdio';
 

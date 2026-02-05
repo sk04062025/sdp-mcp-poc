@@ -13,6 +13,7 @@ export interface ServerConfig {
   };
   maxConnections: number;
   heartbeatInterval: number;
+  encryptionKey: string;
 }
 
 /**

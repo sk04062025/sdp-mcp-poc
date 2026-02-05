@@ -30,12 +30,14 @@ export class SDPMCPServer {
 
   constructor(config: ServerConfig) {
     this.config = config;
-    
+
     // Initialize managers
     this.tenantManager = new TenantManager();
-    this.tokenManager = new TokenManager(this.tenantManager);
+    // Initialize managers
+    this.tenantManager = new TenantManager(this.config.encryptionKey);
+    this.tokenManager = new TokenManager(this.tenantManager, this.config.encryptionKey);
     this.sdpClientFactory = createSDPClientFactory(this.tokenManager, this.tenantManager);
-    
+
     // Initialize MCP server
     this.server = new Server(
       {
@@ -75,7 +77,7 @@ export class SDPMCPServer {
 
         // Get tools available for tenant based on scopes
         const tools = await this.toolRegistry.getToolsForTenant(tenantId);
-        
+
         return {
           tools,
         };
@@ -89,7 +91,7 @@ export class SDPMCPServer {
     this.server.setRequestHandler('tools/call', async (request, extra) => {
       const startTime = Date.now();
       const tenantId = extra?.context?.tenantId;
-      
+
       try {
         if (!tenantId) {
           throw new Error('No tenant context');
@@ -238,7 +240,7 @@ export class SDPMCPServer {
 
         await sseTransport.start();
         await this.server.connect(sseTransport);
-        
+
         logger.info('Server started with SSE transport', {
           port: this.config.port || 3000,
           path: this.config.path || '/mcp',
@@ -247,7 +249,7 @@ export class SDPMCPServer {
 
       // Register all tools
       await this.toolRegistry.registerAllTools();
-      
+
       // Start connection manager
       this.connectionManager.start();
 
@@ -309,6 +311,7 @@ export function createSDPMCPServer(config?: Partial<ServerConfig>): SDPMCPServer
     },
     maxConnections: parseInt(process.env.MCP_MAX_CONNECTIONS || '100'),
     heartbeatInterval: parseInt(process.env.MCP_HEARTBEAT_INTERVAL || '30000'),
+    encryptionKey: process.env.ENCRYPTION_KEY || 'default-key-change-this',
   };
 
   return new SDPMCPServer({
